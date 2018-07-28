@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the global Perl6 version
+#
+# Usage: p6env global <version>
+#
+# Sets the global Perl6 version. You can override the global version at
+# any time by setting a directory-specific version with `p6env local'
+# or by setting the `P6ENV_VERSION' environment variable.
+#
+# <version> should be a string matching a Perl6 version known to p6env.
+# The special version string `system' will use your default system Perl6.
+# Run `p6env versions' for a list of available Perl6 versions.
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+# Provide p6env completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec p6env-versions --bare
+fi
+
+P6ENV_VERSION="$1"
+P6ENV_VERSION_FILE="${P6ENV_ROOT}/version"
+
+if [ -n "$P6ENV_VERSION" ]; then
+  p6env-version-file-write "$P6ENV_VERSION_FILE" "$P6ENV_VERSION"
+else
+  p6env-version-file-read "$P6ENV_VERSION_FILE" || echo system
+fi

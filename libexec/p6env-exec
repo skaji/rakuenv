@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary: Run an executable with the selected Perl6 version
+#
+# Usage: p6env exec <command> [arg1 arg2...]
+#
+# Runs an executable by first preparing PATH so that the selected Perl6
+# version's `bin' directory is at the front.
+#
+# For example, if the currently selected Perl6 version is 1.9.3-p327:
+#   p6env exec bundle install
+#
+# is equivalent to:
+#   PATH="$P6ENV_ROOT/versions/1.9.3-p327/bin:$PATH" bundle install
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+# Provide p6env completions
+if [ "$1" = "--complete" ]; then
+  exec p6env-shims --short
+fi
+
+P6ENV_VERSION="$(p6env-version-name)"
+P6ENV_COMMAND="$1"
+
+if [ -z "$P6ENV_COMMAND" ]; then
+  p6env-help --usage exec >&2
+  exit 1
+fi
+
+export P6ENV_VERSION
+P6ENV_COMMAND_PATH="$(p6env-which "$P6ENV_COMMAND")"
+P6ENV_BIN_PATH="${P6ENV_COMMAND_PATH%/*}"
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`p6env-hooks exec`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+shift 1
+if [ "$P6ENV_VERSION" != "system" ]; then
+  export PATH="${P6ENV_BIN_PATH}:${PATH}"
+fi
+exec -a "$P6ENV_COMMAND" "$P6ENV_COMMAND_PATH" "$@"

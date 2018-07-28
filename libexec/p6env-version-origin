@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Summary: Explain how the current Perl6 version is set
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+unset P6ENV_VERSION_ORIGIN
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`p6env-hooks version-origin`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -n "$P6ENV_VERSION_ORIGIN" ]; then
+  echo "$P6ENV_VERSION_ORIGIN"
+elif [ -n "$P6ENV_VERSION" ]; then
+  echo "P6ENV_VERSION environment variable"
+else
+  p6env-version-file
+fi

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Summary: List existing rbenv shims
-# Usage: rbenv shims [--short]
+# Summary: List existing p6env shims
+# Usage: p6env shims [--short]
 
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$P6ENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide p6env completions
 if [ "$1" = "--complete" ]; then
   echo --short
   exit
@@ -13,7 +13,7 @@ fi
 
 shopt -s nullglob
 
-for command in "${RBENV_ROOT}/shims/"*; do
+for command in "${P6ENV_ROOT}/shims/"*; do
   if [ "$1" = "--short" ]; then
     echo "${command##*/}"
   else

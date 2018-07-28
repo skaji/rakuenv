@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Summary: Display prefix for a Perl6 version
+# Usage: p6env prefix [<version>]
+#
+# Displays the directory where a Perl6 version is installed. If no
+# version is given, `p6env prefix' displays the location of the
+# currently selected version.
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+# Provide p6env completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec p6env-versions --bare
+fi
+
+if [ -n "$1" ]; then
+  export P6ENV_VERSION="$1"
+elif [ -z "$P6ENV_VERSION" ]; then
+  P6ENV_VERSION="$(p6env-version-name)"
+fi
+
+if [ "$P6ENV_VERSION" = "system" ]; then
+  if RUBY_PATH="$(p6env-which perl6 2>/dev/null)"; then
+    RUBY_PATH="${RUBY_PATH%/*}"
+    P6ENV_PREFIX_PATH="${RUBY_PATH%/bin}"
+    echo "${P6ENV_PREFIX_PATH:-/}"
+    exit
+  else
+    echo "p6env: system version not found in PATH" >&2
+    exit 1
+  fi
+fi
+
+P6ENV_PREFIX_PATH="${P6ENV_ROOT}/versions/${P6ENV_VERSION}"
+if [ ! -d "$P6ENV_PREFIX_PATH" ]; then
+  echo "p6env: version \`${P6ENV_VERSION}' not installed" >&2
+  exit 1
+fi
+
+echo "$P6ENV_PREFIX_PATH"

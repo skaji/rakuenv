@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Summary: Configure the shell environment for rbenv
-# Usage: eval "$(rbenv init - [--no-rehash] [<shell>])"
+# Summary: Configure the shell environment for p6env
+# Usage: eval "$(p6env init - [--no-rehash] [<shell>])"
 
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$P6ENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide p6env completions
 if [ "$1" = "--complete" ]; then
   echo -
   echo --no-rehash
@@ -65,15 +65,15 @@ if [ -z "$print" ]; then
     ;;
   esac
 
-  { echo "# Load rbenv automatically by appending"
+  { echo "# Load p6env automatically by appending"
     echo "# the following to ${profile}:"
     echo
     case "$shell" in
     fish )
-      echo 'status --is-interactive; and source (rbenv init -|psub)'
+      echo 'status --is-interactive; and source (p6env init -|psub)'
       ;;
     * )
-      echo 'eval "$(rbenv init -)"'
+      echo 'eval "$(p6env init -)"'
       ;;
     esac
     echo
@@ -82,54 +82,54 @@ if [ -z "$print" ]; then
   exit 1
 fi
 
-mkdir -p "${RBENV_ROOT}/"{shims,versions}
+mkdir -p "${P6ENV_ROOT}/"{shims,versions}
 
 case "$shell" in
 fish )
-  echo "set -gx PATH '${RBENV_ROOT}/shims' \$PATH"
-  echo "set -gx RBENV_SHELL $shell"
+  echo "set -gx PATH '${P6ENV_ROOT}/shims' \$PATH"
+  echo "set -gx P6ENV_SHELL $shell"
 ;;
 * )
-  echo 'export PATH="'${RBENV_ROOT}'/shims:${PATH}"'
-  echo "export RBENV_SHELL=$shell"
+  echo 'export PATH="'${P6ENV_ROOT}'/shims:${PATH}"'
+  echo "export P6ENV_SHELL=$shell"
 ;;
 esac
 
-completion="${root}/completions/rbenv.${shell}"
+completion="${root}/completions/p6env.${shell}"
 if [ -r "$completion" ]; then
   echo "source '$completion'"
 fi
 
 if [ -z "$no_rehash" ]; then
-  echo 'command rbenv rehash 2>/dev/null'
+  echo 'command p6env rehash 2>/dev/null'
 fi
 
-commands=(`rbenv-commands --sh`)
+commands=(`p6env-commands --sh`)
 case "$shell" in
 fish )
   cat <<EOS
-function rbenv
+function p6env
   set command \$argv[1]
   set -e argv[1]
 
   switch "\$command"
   case ${commands[*]}
-    source (rbenv "sh-\$command" \$argv|psub)
+    source (p6env "sh-\$command" \$argv|psub)
   case '*'
-    command rbenv "\$command" \$argv
+    command p6env "\$command" \$argv
   end
 end
 EOS
   ;;
 ksh )
   cat <<EOS
-function rbenv {
+function p6env {
   typeset command
 EOS
   ;;
 * )
   cat <<EOS
-rbenv() {
+p6env() {
   local command
 EOS
   ;;
@@ -145,9 +145,9 @@ cat <<EOS
 
   case "\$command" in
   ${commands[*]})
-    eval "\$(rbenv "sh-\$command" "\$@")";;
+    eval "\$(p6env "sh-\$command" "\$@")";;
   *)
-    command rbenv "\$command" "\$@";;
+    command p6env "\$command" "\$@";;
   esac
 }
 EOS

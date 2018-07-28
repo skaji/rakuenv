@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the local application-specific Perl6 version
+#
+# Usage: p6env local <version>
+#        p6env local --unset
+#
+# Sets the local application-specific Perl6 version by writing the
+# version name to a file named `.perl6-version'.
+#
+# When you run a Perl6 command, p6env will look for a `.perl6-version'
+# file in the current directory and each parent directory. If no such
+# file is found in the tree, p6env will use the global Perl6 version
+# specified with `p6env global'. A version specified with the
+# `P6ENV_VERSION' environment variable takes precedence over local
+# and global versions.
+#
+# <version> should be a string matching a Perl6 version known to p6env.
+# The special version string `system' will use your default system Perl6.
+# Run `p6env versions' for a list of available Perl6 versions.
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+# Provide p6env completions
+if [ "$1" = "--complete" ]; then
+  echo --unset
+  echo system
+  exec p6env-versions --bare
+fi
+
+P6ENV_VERSION="$1"
+
+if [ "$P6ENV_VERSION" = "--unset" ]; then
+  rm -f .perl6-version
+elif [ -n "$P6ENV_VERSION" ]; then
+  p6env-version-file-write .perl6-version "$P6ENV_VERSION"
+else
+  if version_file="$(p6env-version-file "$PWD")"; then
+    p6env-version-file-read "$version_file"
+  else
+    echo "p6env: no local version configured for this directory" >&2
+    exit 1
+  fi
+fi

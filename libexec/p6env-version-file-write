@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: p6env version-file-write <file> <version>
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+P6ENV_VERSION_FILE="$1"
+P6ENV_VERSION="$2"
+
+if [ -z "$P6ENV_VERSION" ] || [ -z "$P6ENV_VERSION_FILE" ]; then
+  p6env-help --usage version-file-write >&2
+  exit 1
+fi
+
+# Make sure the specified version is installed.
+p6env-prefix "$P6ENV_VERSION" >/dev/null
+
+# Write the version out to disk.
+echo "$P6ENV_VERSION" > "$P6ENV_VERSION_FILE"

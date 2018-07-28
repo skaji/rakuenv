@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -e
+
+if [ "$1" = "--debug" ]; then
+  export P6ENV_DEBUG=1
+  shift
+fi
+
+if [ -n "$P6ENV_DEBUG" ]; then
+  export PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+  set -x
+fi
+
+abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "p6env: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+if enable -f "${BASH_SOURCE%/*}"/../libexec/p6env-realpath.dylib realpath 2>/dev/null; then
+  abs_dirname() {
+    local path
+    path="$(realpath "$1")"
+    echo "${path%/*}"
+  }
+else
+  [ -z "$P6ENV_NATIVE_EXT" ] || abort "failed to load \`realpath' builtin"
+
+  READLINK=$(type -p greadlink readlink | head -1)
+  [ -n "$READLINK" ] || abort "cannot find readlink - are you missing GNU coreutils?"
+
+  resolve_link() {
+    $READLINK "$1"
+  }
+
+  abs_dirname() {
+    local cwd="$PWD"
+    local path="$1"
+
+    while [ -n "$path" ]; do
+      cd "${path%/*}"
+      local name="${path##*/}"
+      path="$(resolve_link "$name" || true)"
+    done
+
+    pwd
+    cd "$cwd"
+  }
+fi
+
+if [ -z "${P6ENV_ROOT}" ]; then
+  P6ENV_ROOT="${HOME}/.p6env"
+else
+  P6ENV_ROOT="${P6ENV_ROOT%/}"
+fi
+export P6ENV_ROOT
+
+if [ -z "${P6ENV_DIR}" ]; then
+  P6ENV_DIR="$PWD"
+else
+  [[ $P6ENV_DIR == /* ]] || P6ENV_DIR="$PWD/$P6ENV_DIR"
+  cd "$P6ENV_DIR" 2>/dev/null || abort "cannot change working directory to \`$P6ENV_DIR'"
+  P6ENV_DIR="$PWD"
+  cd "$OLDPWD"
+fi
+export P6ENV_DIR
+
+
+shopt -s nullglob
+
+bin_path="$(abs_dirname "$0")"
+for plugin_bin in "${P6ENV_ROOT}/plugins/"*/bin; do
+  PATH="${plugin_bin}:${PATH}"
+done
+export PATH="${bin_path}:${PATH}"
+
+P6ENV_HOOK_PATH="${P6ENV_HOOK_PATH}:${P6ENV_ROOT}/p6env.d"
+if [ "${bin_path%/*}" != "$P6ENV_ROOT" ]; then
+  # Add p6env's own `p6env.d` unless p6env was cloned to P6ENV_ROOT
+  P6ENV_HOOK_PATH="${P6ENV_HOOK_PATH}:${bin_path%/*}/p6env.d"
+fi
+P6ENV_HOOK_PATH="${P6ENV_HOOK_PATH}:/usr/local/etc/p6env.d:/etc/p6env.d:/usr/lib/p6env/hooks"
+for plugin_hook in "${P6ENV_ROOT}/plugins/"*/etc/p6env.d; do
+  P6ENV_HOOK_PATH="${P6ENV_HOOK_PATH}:${plugin_hook}"
+done
+P6ENV_HOOK_PATH="${P6ENV_HOOK_PATH#:}"
+export P6ENV_HOOK_PATH
+
+shopt -u nullglob
+
+
+command="$1"
+case "$command" in
+"" )
+  { p6env---version
+    p6env-help
+  } | abort
+  ;;
+-v | --version )
+  exec p6env---version
+  ;;
+-h | --help )
+  exec p6env-help
+  ;;
+* )
+  command_path="$(command -v "p6env-$command" || true)"
+  if [ -z "$command_path" ]; then
+    if [ "$command" == "shell" ]; then
+      abort "shell integration not enabled. Run \`p6env init' for instructions."
+    else
+      abort "no such command \`$command'"
+    fi
+  fi
+
+  shift 1
+  if [ "$1" = --help ]; then
+    if [[ "$command" == "sh-"* ]]; then
+      echo "p6env help \"$command\""
+    else
+      exec p6env-help "$command"
+    fi
+  else
+    exec "$command_path" "$@"
+  fi
+  ;;
+esac

@@ -2,7 +2,7 @@
 #
 # Summary: Display help for a command
 #
-# Usage: rbenv help [--usage] COMMAND
+# Usage: p6env help [--usage] COMMAND
 #
 # Parses and displays help contents from a command's source file.
 #
@@ -13,17 +13,17 @@
 # documentation.
 
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$P6ENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide p6env completions
 if [ "$1" = "--complete" ]; then
   echo --usage
-  exec rbenv-commands
+  exec p6env-commands
 fi
 
 command_path() {
   local command="$1"
-  command -v rbenv-"$command" || command -v rbenv-sh-"$command" || true
+  command -v p6env-"$command" || command -v p6env-sh-"$command" || true
 }
 
 extract_initial_comment_block() {
@@ -120,7 +120,7 @@ print_help() {
     if [ -n "$usage" ]; then
       echo "$usage"
     else
-      echo "Usage: rbenv ${command}"
+      echo "Usage: p6env ${command}"
     fi
     if [ -n "$help" ]; then
       echo
@@ -146,15 +146,15 @@ if [ "$1" = "--usage" ]; then
   shift
 fi
 
-if [ -z "$1" ] || [ "$1" == "rbenv" ]; then
-  echo "Usage: rbenv <command> [<args>]"
+if [ -z "$1" ] || [ "$1" == "p6env" ]; then
+  echo "Usage: p6env <command> [<args>]"
   [ -z "$usage" ] || exit
   echo
-  echo "Some useful rbenv commands are:"
+  echo "Some useful p6env commands are:"
   print_summaries commands local global shell install uninstall rehash version versions which whence
   echo
-  echo "See \`rbenv help <command>' for information on a specific command."
-  echo "For full documentation, see: https://github.com/rbenv/rbenv#readme"
+  echo "See \`p6env help <command>' for information on a specific command."
+  echo "For full documentation, see: https://github.com/p6env/p6env#readme"
 else
   command="$1"
   if [ -n "$(command_path "$command")" ]; then
@@ -164,7 +164,7 @@ else
       print_help "$command"
     fi
   else
-    echo "rbenv: no such command \`$command'" >&2
+    echo "p6env: no such command \`$command'" >&2
     exit 1
   fi
 fi

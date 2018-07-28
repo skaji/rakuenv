@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the shell-specific Perl6 version
+#
+# Usage: p6env shell <version>
+#        p6env shell -
+#        p6env shell --unset
+#
+# Sets a shell-specific Perl6 version by setting the `P6ENV_VERSION'
+# environment variable in your shell. This version overrides local
+# application-specific versions and the global version.
+#
+# <version> should be a string matching a Perl6 version known to p6env.
+# The special version string `system' will use your default system Perl6.
+# Run `p6env versions' for a list of available Perl6 versions.
+#
+# When `-` is passed instead of the version string, the previously set
+# version will be restored. With `--unset`, the `P6ENV_VERSION`
+# environment variable gets unset, restoring the environment to the
+# state before the first `p6env shell` call.
+
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+# Provide p6env completions
+if [ "$1" = "--complete" ]; then
+  echo --unset
+  echo system
+  exec p6env-versions --bare
+fi
+
+version="$1"
+shell="$(basename "${P6ENV_SHELL:-$SHELL}")"
+
+if [ -z "$version" ]; then
+  if [ -z "$P6ENV_VERSION" ]; then
+    echo "p6env: no shell-specific version configured" >&2
+    exit 1
+  else
+    echo 'echo "$P6ENV_VERSION"'
+    exit
+  fi
+fi
+
+if [ "$version" = "--unset" ]; then
+  case "$shell" in
+  fish )
+    echo 'set -gu P6ENV_VERSION_OLD "$P6ENV_VERSION"'
+    echo "set -e P6ENV_VERSION"
+    ;;
+  * )
+    echo 'P6ENV_VERSION_OLD="$P6ENV_VERSION"'
+    echo "unset P6ENV_VERSION"
+    ;;
+  esac
+  exit
+fi
+
+if [ "$version" = "-" ]; then
+  case "$shell" in
+  fish )
+    cat <<EOS
+if set -q P6ENV_VERSION_OLD
+  if [ -n "\$P6ENV_VERSION_OLD" ]
+    set P6ENV_VERSION_OLD_ "\$P6ENV_VERSION"
+    set -gx P6ENV_VERSION "\$P6ENV_VERSION_OLD"
+    set -gu P6ENV_VERSION_OLD "\$P6ENV_VERSION_OLD_"
+    set -e P6ENV_VERSION_OLD_
+  else
+    set -gu P6ENV_VERSION_OLD "\$P6ENV_VERSION"
+    set -e P6ENV_VERSION
+  end
+else
+  echo "p6env: P6ENV_VERSION_OLD is not set" >&2
+  false
+end
+EOS
+    ;;
+  * )
+    cat <<EOS
+if [ -n "\${P6ENV_VERSION_OLD+x}" ]; then
+  if [ -n "\$P6ENV_VERSION_OLD" ]; then
+    P6ENV_VERSION_OLD_="\$P6ENV_VERSION"
+    export P6ENV_VERSION="\$P6ENV_VERSION_OLD"
+    P6ENV_VERSION_OLD="\$P6ENV_VERSION_OLD_"
+    unset P6ENV_VERSION_OLD_
+  else
+    P6ENV_VERSION_OLD="\$P6ENV_VERSION"
+    unset P6ENV_VERSION
+  fi
+else
+  echo "p6env: P6ENV_VERSION_OLD is not set" >&2
+  false
+fi
+EOS
+    ;;
+  esac
+  exit
+fi
+
+# Make sure the specified version is installed.
+if p6env-prefix "$version" >/dev/null; then
+  if [ "$version" != "$P6ENV_VERSION" ]; then
+    case "$shell" in
+    fish )
+      echo 'set -gu P6ENV_VERSION_OLD "$P6ENV_VERSION"'
+      echo "set -gx P6ENV_VERSION \"$version\""
+      ;;
+    * )
+      echo 'P6ENV_VERSION_OLD="$P6ENV_VERSION"'
+      echo "export P6ENV_VERSION=\"$version\""
+      ;;
+    esac
+  fi
+else
+  echo "false"
+  exit 1
+fi

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Summary: List all available rbenv commands
-# Usage: rbenv commands [--sh|--no-sh]
+# Summary: List all available p6env commands
+# Usage: p6env commands [--sh|--no-sh]
 
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$P6ENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide p6env completions
 if [ "$1" = "--complete" ]; then
   echo --sh
   echo --no-sh
@@ -25,8 +25,8 @@ IFS=: paths=($PATH)
 shopt -s nullglob
 
 { for path in "${paths[@]}"; do
-    for command in "${path}/rbenv-"*; do
-      command="${command##*rbenv-}"
+    for command in "${path}/p6env-"*; do
+      command="${command##*p6env-}"
       if [ -n "$sh" ]; then
         if [ "${command:0:3}" = "sh-" ]; then
           echo "${command##sh-}"

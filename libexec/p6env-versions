@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Summary: List all Ruby versions available to rbenv
-# Usage: rbenv versions [--bare] [--skip-aliases]
+# Summary: List all Perl6 versions available to p6env
+# Usage: p6env versions [--bare] [--skip-aliases]
 #
-# Lists all Ruby versions found in `$RBENV_ROOT/versions/*'.
+# Lists all Perl6 versions found in `$P6ENV_ROOT/versions/*'.
 
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$P6ENV_DEBUG" ] && set -x
 
 unset bare
 unset skip_aliases
-# Provide rbenv completions
+# Provide p6env completions
 for arg; do
   case "$arg" in
   --complete )
@@ -19,23 +19,23 @@ for arg; do
   --bare ) bare=1 ;;
   --skip-aliases ) skip_aliases=1 ;;
   * )
-    rbenv-help --usage versions >&2
+    p6env-help --usage versions >&2
     exit 1
     ;;
   esac
 done
 
-versions_dir="${RBENV_ROOT}/versions"
+versions_dir="${P6ENV_ROOT}/versions"
 
-if ! enable -f "${BASH_SOURCE%/*}"/rbenv-realpath.dylib realpath 2>/dev/null; then
-  if [ -n "$RBENV_NATIVE_EXT" ]; then
-    echo "rbenv: failed to load \`realpath' builtin" >&2
+if ! enable -f "${BASH_SOURCE%/*}"/p6env-realpath.dylib realpath 2>/dev/null; then
+  if [ -n "$P6ENV_NATIVE_EXT" ]; then
+    echo "p6env: failed to load \`realpath' builtin" >&2
     exit 1
   fi
 
   READLINK=$(type -p greadlink readlink | head -1)
   if [ -z "$READLINK" ]; then
-    echo "rbenv: cannot find readlink - are you missing GNU coreutils?" >&2
+    echo "p6env: cannot find readlink - are you missing GNU coreutils?" >&2
     exit 1
   fi
 
@@ -71,7 +71,7 @@ if [ -n "$bare" ]; then
 else
   hit_prefix="* "
   miss_prefix="  "
-  current_version="$(rbenv-version-name || true)"
+  current_version="$(p6env-version-name || true)"
   include_system="1"
 fi
 
@@ -79,7 +79,7 @@ num_versions=0
 
 print_version() {
   if [ "$1" == "$current_version" ]; then
-    echo "${hit_prefix}$(rbenv-version 2>/dev/null)"
+    echo "${hit_prefix}$(p6env-version 2>/dev/null)"
   else
     echo "${miss_prefix}$1"
   fi
@@ -87,7 +87,7 @@ print_version() {
 }
 
 # Include "system" in the non-bare output, if it exists
-if [ -n "$include_system" ] && RBENV_VERSION=system rbenv-which ruby >/dev/null 2>&1; then
+if [ -n "$include_system" ] && P6ENV_VERSION=system p6env-which perl6 >/dev/null 2>&1; then
   print_version system
 fi
 
@@ -104,6 +104,6 @@ done
 shopt -u nullglob
 
 if [ "$num_versions" -eq 0 ] && [ -n "$include_system" ]; then
-  echo "Warning: no Ruby detected on the system" >&2
+  echo "Warning: no Perl6 detected on the system" >&2
   exit 1
 fi
