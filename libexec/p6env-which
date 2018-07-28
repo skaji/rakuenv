@@ -41,6 +41,9 @@ if [ "$P6ENV_VERSION" = "system" ]; then
     P6ENV_COMMAND_PATH="$(command -v "$P6ENV_COMMAND" || true)"
 else
   P6ENV_COMMAND_PATH="${P6ENV_ROOT}/versions/${P6ENV_VERSION}/bin/${P6ENV_COMMAND}"
+  if [ ! -x "$P6ENV_COMMAND_PATH" ]; then
+    P6ENV_COMMAND_PATH="${P6ENV_ROOT}/versions/${P6ENV_VERSION}/share/perl6/site/bin/${P6ENV_COMMAND}"
+  fi
 fi
 
 OLDIFS="$IFS"

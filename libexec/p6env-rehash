@@ -84,7 +84,7 @@ list_executable_names() {
   local version file
   p6env-versions --bare --skip-aliases | \
   while read -r version; do
-    for file in "${P6ENV_ROOT}/versions/${version}/bin/"*; do
+    for file in "${P6ENV_ROOT}/versions/${version}/bin/"* "${P6ENV_ROOT}/versions/${version}/share/perl6/site/bin/"*; do
       echo "${file##*/}"
     done
   done

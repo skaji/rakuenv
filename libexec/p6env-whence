@@ -25,6 +25,10 @@ whence() {
     if [ -x "$path" ]; then
       [ "$print_paths" ] && echo "$path" || echo "$version"
     fi
+    path="$(p6env-prefix "$version")/share/perl6/site/bin/${command}"
+    if [ -x "$path" ]; then
+      [ "$print_paths" ] && echo "$path" || echo "$version"
+    fi
   done
 }
 
