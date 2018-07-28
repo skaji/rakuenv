@@ -60,12 +60,28 @@ then you can safely ignore this describution, I think:)
 
 ~~~ sh
 $ p6env install -l
+Available versions (latest 20 versions):
+ rakudo-star-2018.04
+ rakudo-star-2018.01
+ rakudo-star-2017.10
+ ...
 
 $ p6env install rakudo-star-2018.04
+...
+DONE
+
+$ p6env versions
+  system
+* rakudo-star-2018.04 (set by /home/skaji/.p6env/version)
 
 $ p6env global rakudo-star-2018.04
 
 $ perl6 -v
+This is Rakudo Star version 2018.04.1 built on MoarVM version 2018.04.1
+implementing Perl 6.c.
+
+$ p6env install-zef --/test
+...
 ~~~
 
 ## License
