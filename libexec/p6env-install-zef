@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#
+# Summary: Install zef from git repository
+#
+# Usage: p6env install-zef [--/test]
+#
+#  --/test  skip test
+#
+set -e
+[ -n "$P6ENV_DEBUG" ] && set -x
+
+if [ -z "$P6ENV_ROOT" ]; then
+    P6ENV_ROOT="${HOME}/.p6env"
+fi
+
+function parse_options ()
+{
+    OPTIONS=();
+    ARGUMENTS=();
+    local arg option index;
+    for arg in "$@";
+    do
+        if [ "${arg:0:1}" = "-" ]; then
+            if [ "${arg:1:1}" = "-" ]; then
+                OPTIONS[${#OPTIONS[*]}]="${arg:2}";
+            else
+                index=1;
+                while option="${arg:$index:1}"; do
+                    [ -n "$option" ] || break;
+                    OPTIONS[${#OPTIONS[*]}]="$option";
+                    index=$(($index+1));
+                done;
+            fi;
+        else
+            ARGUMENTS[${#ARGUMENTS[*]}]="$arg";
+        fi;
+    done
+};
+
+usage() {
+  # We can remove the sed fallback once p6env 0.4.0 is widely available.
+  p6env-help install-zef 2>/dev/null || sed -ne '/^#/!q;s/.//;s/.//;1,4d;p' < "$0"
+  [ -z "$1" ] || exit "$1"
+}
+
+unset VERBOSE
+
+#   CURRENT=$(cd $(dirname $0) && pwd)
+#   PERL_BUILD=$CURRENT/perl-build
+
+#   exec $PERL_BUILD $*
+parse_options "$@"
+for option in "${OPTIONS[@]}"; do
+  case "$option" in
+  "h" | "help" )
+    usage 0
+    ;;
+  "/test" )
+    ZEF_OPTION="--/test"
+    ;;
+  * )
+    usage 1
+    ;;
+  esac
+done
+
+ZEF_DIRECTORY="${P6ENV_ROOT}"/git_reference/zef
+if [ ! -d "$ZEF_DIRECTORY" ]; then
+  git clone https://github.com/ugexe/zef "$ZEF_DIRECTORY"
+else
+  ( cd "$ZEF_DIRECTORY" && git clean -q -xfd && git pull origin master )
+fi
+
+p6env exec perl6 -I"$ZEF_DIRECTORY/lib" "$ZEF_DIRECTORY/bin/zef" install $ZEF_OPTION "$ZEF_DIRECTORY"
+p6env rehash
