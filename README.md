@@ -2,6 +2,8 @@
 
 env family for perl6
 
+This is a fork of https://github.com/rbenv/rbenv
+
 ## Install
 
 Note that if you are familiar with `*env` such as rbenv or plenv,
@@ -35,11 +37,13 @@ then you can safely ignore this describution, I think:)
      $ set -Ux fish_user_paths $HOME/.p6env/bin $fish_user_paths
      ~~~
 
-3. Set up rbenv in your shell.
+3. Add `p6env init` to your shell to enable shims and autocompletion.
 
    ~~~ sh
-   $ ~/.rbenv/bin/rbenv init
+   $ echo 'eval "$(p6env init -)"' >> ~/.bash_profile
    ~~~
+
+   Please change `~/.bash_profile` as in step 2.
 
 4. Restart your shell so that PATH changes take effect. (Opening a new
    terminal tab will usually do it.)
