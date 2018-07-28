@@ -7,7 +7,7 @@ This is a fork of https://github.com/rbenv/rbenv
 ## Install
 
 Note that if you are familiar with `*env` such as rbenv or plenv,
-then you can safely ignore this describution, I think:)
+then you can safely ignore this description, I think:)
 
 1. Clone p6env into `~/.p6env`.
 
