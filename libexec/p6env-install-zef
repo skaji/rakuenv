@@ -64,11 +64,14 @@ for option in "${OPTIONS[@]}"; do
   esac
 done
 
+ZEF_URL=https://github.com/ugexe/zef
 ZEF_DIRECTORY="${P6ENV_ROOT}"/git_reference/zef
 if [ ! -d "$ZEF_DIRECTORY" ]; then
-  git clone https://github.com/ugexe/zef "$ZEF_DIRECTORY"
+  echo "Cloning $ZEF_URL" >&2
+  git clone "$ZEF_URL" "$ZEF_DIRECTORY"
 else
-  ( cd "$ZEF_DIRECTORY" && git clean -q -xfd && git pull origin master )
+  echo "Updating $ZEF_URL" >&2
+  ( cd "$ZEF_DIRECTORY" && git clean -q -xfd && git pull -t -p )
 fi
 
 p6env exec perl6 -I"$ZEF_DIRECTORY/lib" "$ZEF_DIRECTORY/bin/zef" install $ZEF_OPTION "$ZEF_DIRECTORY"
