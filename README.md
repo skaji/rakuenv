@@ -1,13 +1,13 @@
 # p6env
 
-env family for perl6
+Perl6 Environment Manager
 
-This is a fork of https://github.com/rbenv/rbenv
+![](https://user-images.githubusercontent.com/1589550/50726496-56ee6d00-1151-11e9-97e9-26e50f03108b.png)
 
 ## Install
 
-Note that if you are familiar with `*env` such as rbenv or plenv,
-then you can safely ignore this description, I think:)
+**Note**: If you are familiar with *env* family such as rbenv or plenv,
+then you can safely skip this description.
 
 1. Clone p6env into `~/.p6env`.
 
@@ -60,28 +60,18 @@ then you can safely ignore this description, I think:)
 
 ~~~ sh
 $ p6env install -l
-Available versions (latest 20 versions):
- rakudo-star-2018.04
- rakudo-star-2018.01
- rakudo-star-2017.10
- ...
 
-$ p6env install rakudo-star-2018.04
-...
-DONE
+$ p6env install rakudo-star-2018.10
 
 $ p6env versions
-  system
-* rakudo-star-2018.04 (set by /home/skaji/.p6env/version)
 
-$ p6env global rakudo-star-2018.04
+$ p6env global rakudo-star-2018.10
 
 $ perl6 -v
-This is Rakudo Star version 2018.04.1 built on MoarVM version 2018.04.1
+This is Rakudo Star version 2018.10 built on MoarVM version 2018.10
 implementing Perl 6.c.
 
-$ p6env install-zef --/test
-...
+$ p6env install-zef
 ~~~
 
 ## License
