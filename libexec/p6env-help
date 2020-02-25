@@ -97,10 +97,11 @@ documentation_for() {
 print_summary() {
   local command="$1"
   local summary usage help
+  local longest_command_word_count=11
   eval "$(documentation_for "$command")"
 
   if [ -n "$summary" ]; then
-    printf "   %-9s   %s\n" "$command" "$summary"
+    printf "   %-${longest_command_word_count}s   %s\n" "$command" "$summary"
   fi
 }
 
@@ -151,7 +152,7 @@ if [ -z "$1" ] || [ "$1" == "p6env" ]; then
   [ -z "$usage" ] || exit
   echo
   echo "Some useful p6env commands are:"
-  print_summaries commands local global shell install uninstall rehash version versions which whence
+  print_summaries commands local global shell install uninstall rehash version versions which whence install-zef
   echo
   echo "See \`p6env help <command>' for information on a specific command."
   echo "For full documentation, see: https://github.com/skaji/p6env#readme"
