@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: rakuenv version-file-write <file> <version>
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+RAKUENV_VERSION_FILE="$1"
+RAKUENV_VERSION="$2"
+
+if [ -z "$RAKUENV_VERSION" ] || [ -z "$RAKUENV_VERSION_FILE" ]; then
+  rakuenv-help --usage version-file-write >&2
+  exit 1
+fi
+
+# Make sure the specified version is installed.
+rakuenv-prefix "$RAKUENV_VERSION" >/dev/null
+
+# Write the version out to disk.
+echo "$RAKUENV_VERSION" > "$RAKUENV_VERSION_FILE"

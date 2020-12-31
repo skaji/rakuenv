@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  exec rakuenv-rehash --complete
+fi
+
+shell="$(basename "${RAKUENV_SHELL:-$SHELL}")"
+
+# When rakuenv shell integration is enabled, delegate to rakuenv-rehash,
+# then tell the shell to empty its command lookup cache.
+rakuenv-rehash
+
+case "$shell" in
+fish )
+  # no rehash support
+  ;;
+* )
+  echo "hash -r 2>/dev/null || true"
+  ;;
+esac

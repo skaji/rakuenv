@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Usage: rakuenv completions <command> [arg1 arg2...]
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+COMMAND="$1"
+if [ -z "$COMMAND" ]; then
+  rakuenv-help --usage completions >&2
+  exit 1
+fi
+
+# Provide rakuenv completions
+if [ "$COMMAND" = "--complete" ]; then
+  exec rakuenv-commands
+fi
+
+COMMAND_PATH="$(command -v "rakuenv-$COMMAND" || command -v "rakuenv-sh-$COMMAND")"
+
+# --help is provided automatically
+echo --help
+
+if grep -iE "^([#%]|--|//) provide rakuenv completions" "$COMMAND_PATH" >/dev/null; then
+  shift
+  exec "$COMMAND_PATH" --complete "$@"
+fi

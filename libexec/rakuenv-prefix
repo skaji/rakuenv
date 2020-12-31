@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Summary: Display prefix for a Raku version
+# Usage: rakuenv prefix [<version>]
+#
+# Displays the directory where a Raku version is installed. If no
+# version is given, `rakuenv prefix' displays the location of the
+# currently selected version.
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec rakuenv-versions --bare
+fi
+
+if [ -n "$1" ]; then
+  export RAKUENV_VERSION="$1"
+elif [ -z "$RAKUENV_VERSION" ]; then
+  RAKUENV_VERSION="$(rakuenv-version-name)"
+fi
+
+if [ "$RAKUENV_VERSION" = "system" ]; then
+  if RAKU_PATH="$(rakuenv-which raku 2>/dev/null)"; then
+    RAKU_PATH="${RAKU_PATH%/*}"
+    RAKUENV_PREFIX_PATH="${RAKU_PATH%/bin}"
+    echo "${RAKUENV_PREFIX_PATH:-/}"
+    exit
+  else
+    echo "rakuenv: system version not found in PATH" >&2
+    exit 1
+  fi
+fi
+
+RAKUENV_PREFIX_PATH="${RAKUENV_ROOT}/versions/${RAKUENV_VERSION}"
+if [ ! -d "$RAKUENV_PREFIX_PATH" ]; then
+  echo "rakuenv: version \`${RAKUENV_VERSION}' not installed" >&2
+  exit 1
+fi
+
+echo "$RAKUENV_PREFIX_PATH"

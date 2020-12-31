@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Summary: Explain how the current Raku version is set
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+unset RAKUENV_VERSION_ORIGIN
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`rakuenv-hooks version-origin`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -n "$RAKUENV_VERSION_ORIGIN" ]; then
+  echo "$RAKUENV_VERSION_ORIGIN"
+elif [ -n "$RAKUENV_VERSION" ]; then
+  echo "RAKUENV_VERSION environment variable"
+else
+  rakuenv-version-file
+fi

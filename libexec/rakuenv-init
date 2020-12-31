@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# Summary: Configure the shell environment for rakuenv
+# Usage: eval "$(rakuenv init - [--no-rehash] [<shell>])"
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  echo -
+  echo --no-rehash
+  echo bash
+  echo fish
+  echo ksh
+  echo zsh
+  exit
+fi
+
+print=""
+no_rehash=""
+for args in "$@"
+do
+  if [ "$args" = "-" ]; then
+    print=1
+    shift
+  fi
+
+  if [ "$args" = "--no-rehash" ]; then
+    no_rehash=1
+    shift
+  fi
+done
+
+shell="$1"
+if [ -z "$shell" ]; then
+  shell="$(ps -p "$PPID" -o 'args=' 2>/dev/null || true)"
+  shell="${shell%% *}"
+  shell="${shell##-}"
+  shell="${shell:-$SHELL}"
+  shell="${shell##*/}"
+fi
+
+root="${0%/*}/.."
+
+if [ -z "$print" ]; then
+  case "$shell" in
+  bash )
+    if [ -f "${HOME}/.bashrc" ] && [ ! -f "${HOME}/.bash_profile" ]; then
+      profile='~/.bashrc'
+    else
+      profile='~/.bash_profile'
+    fi
+    ;;
+  zsh )
+    profile='~/.zshrc'
+    ;;
+  ksh )
+    profile='~/.profile'
+    ;;
+  fish )
+    profile='~/.config/fish/config.fish'
+    ;;
+  * )
+    profile='your profile'
+    ;;
+  esac
+
+  { echo "# Load rakuenv automatically by appending"
+    echo "# the following to ${profile}:"
+    echo
+    case "$shell" in
+    fish )
+      echo 'status --is-interactive; and source (rakuenv init -|psub)'
+      ;;
+    * )
+      echo 'eval "$(rakuenv init -)"'
+      ;;
+    esac
+    echo
+  } >&2
+
+  exit 1
+fi
+
+mkdir -p "${RAKUENV_ROOT}/"{shims,versions}
+
+case "$shell" in
+fish )
+  echo "set -gx PATH '${RAKUENV_ROOT}/shims' \$PATH"
+  echo "set -gx RAKUENV_SHELL $shell"
+;;
+* )
+  echo 'export PATH="'${RAKUENV_ROOT}'/shims:${PATH}"'
+  echo "export RAKUENV_SHELL=$shell"
+;;
+esac
+
+completion="${root}/completions/rakuenv.${shell}"
+if [ -r "$completion" ]; then
+  echo "source '$completion'"
+fi
+
+if [ -z "$no_rehash" ]; then
+  echo 'command rakuenv rehash 2>/dev/null'
+fi
+
+commands=(`rakuenv-commands --sh`)
+case "$shell" in
+fish )
+  cat <<EOS
+function rakuenv
+  set command \$argv[1]
+  set -e argv[1]
+
+  switch "\$command"
+  case ${commands[*]}
+    source (rakuenv "sh-\$command" \$argv|psub)
+  case '*'
+    command rakuenv "\$command" \$argv
+  end
+end
+EOS
+  ;;
+ksh )
+  cat <<EOS
+function rakuenv {
+  typeset command
+EOS
+  ;;
+* )
+  cat <<EOS
+rakuenv() {
+  local command
+EOS
+  ;;
+esac
+
+if [ "$shell" != "fish" ]; then
+IFS="|"
+cat <<EOS
+  command="\${1:-}"
+  if [ "\$#" -gt 0 ]; then
+    shift
+  fi
+
+  case "\$command" in
+  ${commands[*]})
+    eval "\$(rakuenv "sh-\$command" "\$@")";;
+  *)
+    command rakuenv "\$command" "\$@";;
+  esac
+}
+EOS
+fi

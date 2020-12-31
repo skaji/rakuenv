@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+if [[ $# -eq 0 ]] || [[ $1 = "-h" ]]; then
+  echo "Usage: rakuenv uninstall <version>"
+  exit 1
+fi
+
+# Provide rakuenv completions
+if [[ $1 = "--complete" ]]; then
+  exec rakuenv-versions --bare
+fi
+
+RAKUENV_ROOT=${RAKUENV_ROOT-$HOME/.rakuenv}
+
+RAKUENV_VERSION="$1"
+RAKUENV_VERSION_ABS="$RAKUENV_ROOT/versions/$RAKUENV_VERSION"
+
+if [[ -d $RAKUENV_VERSION_ABS ]]; then
+  rm -rf $RAKUENV_VERSION_ABS
+else
+  echo "version '$RAKUENV_VERSION' not installed" >&2
+  exit 1
+fi

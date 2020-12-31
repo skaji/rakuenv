@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Summary: List all Raku versions that contain the given executable
+# Usage: rakuenv whence [--path] <command>
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  echo --path
+  exec rakuenv-shims --short
+fi
+
+if [ "$1" = "--path" ]; then
+  print_paths="1"
+  shift
+else
+  print_paths=""
+fi
+
+whence() {
+  local command="$1"
+  rakuenv-versions --bare | while read -r version; do
+    path="$(rakuenv-prefix "$version")/bin/${command}"
+    if [ -x "$path" ]; then
+      [ "$print_paths" ] && echo "$path" || echo "$version"
+    fi
+    path="$(rakuenv-prefix "$version")/share/perl6/site/bin/${command}"
+    if [ -x "$path" ]; then
+      [ "$print_paths" ] && echo "$path" || echo "$version"
+    fi
+  done
+}
+
+RAKUENV_COMMAND="$1"
+if [ -z "$RAKUENV_COMMAND" ]; then
+  rakuenv-help --usage whence >&2
+  exit 1
+fi
+
+result="$(whence "$RAKUENV_COMMAND")"
+[ -n "$result" ] && echo "$result"
