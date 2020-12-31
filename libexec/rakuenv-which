@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# Summary: Display the full path to an executable
+#
+# Usage: rakuenv which <command>
+#
+# Displays the full path to the executable that rakuenv will invoke when
+# you run the given command.
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  exec rakuenv-shims --short
+fi
+
+remove_from_path() {
+  local path_to_remove="$1"
+  local path_before
+  local result=":${PATH//\~/$HOME}:"
+  while [ "$path_before" != "$result" ]; do
+    path_before="$result"
+    result="${result//:$path_to_remove:/:}"
+  done
+  result="${result%:}"
+  echo "${result#:}"
+}
+
+RAKUENV_COMMAND="$1"
+
+if [ -z "$RAKUENV_COMMAND" ]; then
+  rakuenv-help --usage which >&2
+  exit 1
+fi
+
+RAKUENV_VERSION="${RAKUENV_VERSION:-$(rakuenv-version-name)}"
+
+if [ "$RAKUENV_VERSION" = "system" ]; then
+  PATH="$(remove_from_path "${RAKUENV_ROOT}/shims")" \
+    RAKUENV_COMMAND_PATH="$(command -v "$RAKUENV_COMMAND" || true)"
+else
+  RAKUENV_COMMAND_PATH="${RAKUENV_ROOT}/versions/${RAKUENV_VERSION}/bin/${RAKUENV_COMMAND}"
+  if [ ! -x "$RAKUENV_COMMAND_PATH" ]; then
+    RAKUENV_COMMAND_PATH="${RAKUENV_ROOT}/versions/${RAKUENV_VERSION}/share/perl6/site/bin/${RAKUENV_COMMAND}"
+  fi
+fi
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`rakuenv-hooks which`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -x "$RAKUENV_COMMAND_PATH" ]; then
+  echo "$RAKUENV_COMMAND_PATH"
+elif [ "$RAKUENV_VERSION" != "system" ] && [ ! -d "${RAKUENV_ROOT}/versions/${RAKUENV_VERSION}" ]; then
+  echo "rakuenv: version \`$RAKUENV_VERSION' is not installed (set by $(rakuenv-version-origin))" >&2
+  exit 1
+else
+  echo "rakuenv: $RAKUENV_COMMAND: command not found" >&2
+
+  versions="$(rakuenv-whence "$RAKUENV_COMMAND" || true)"
+  if [ -n "$versions" ]; then
+    { echo
+      echo "The \`$1' command exists in these Raku versions:"
+      echo "$versions" | sed 's/^/  /g'
+      echo
+    } >&2
+  fi
+
+  exit 127
+fi

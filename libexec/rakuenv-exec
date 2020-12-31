@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary: Run an executable with the selected Raku version
+#
+# Usage: rakuenv exec <command> [arg1 arg2...]
+#
+# Runs an executable by first preparing PATH so that the selected Raku
+# version's `bin' directory is at the front.
+#
+# For example, if the currently selected Raku version is 1.9.3-p327:
+#   rakuenv exec bundle install
+#
+# is equivalent to:
+#   PATH="$RAKUENV_ROOT/versions/1.9.3-p327/bin:$PATH" bundle install
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+# Provide rakuenv completions
+if [ "$1" = "--complete" ]; then
+  exec rakuenv-shims --short
+fi
+
+RAKUENV_VERSION="$(rakuenv-version-name)"
+RAKUENV_COMMAND="$1"
+
+if [ -z "$RAKUENV_COMMAND" ]; then
+  rakuenv-help --usage exec >&2
+  exit 1
+fi
+
+export RAKUENV_VERSION
+RAKUENV_COMMAND_PATH="$(rakuenv-which "$RAKUENV_COMMAND")"
+RAKUENV_BIN_PATH="${RAKUENV_COMMAND_PATH%/*}"
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`rakuenv-hooks exec`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+shift 1
+if [ "$RAKUENV_VERSION" != "system" ]; then
+  export PATH="${RAKUENV_BIN_PATH}:${PATH}"
+fi
+exec -a "$RAKUENV_COMMAND" "$RAKUENV_COMMAND_PATH" "$@"

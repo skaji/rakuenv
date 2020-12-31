@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Summary: Show the current Raku version and its origin
+#
+# Shows the currently selected Raku version and how it was
+# selected. To obtain only the version string, use `rakuenv
+# version-name'.
+
+set -e
+[ -n "$RAKUENV_DEBUG" ] && set -x
+
+echo "$(rakuenv-version-name) (set by $(rakuenv-version-origin))"

@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+#
+# Summary: Install precompiled rakudo binaries from https://rakudo.org/downloads
+#
+# Usage: rakuenv install <version>
+#
+# Options:
+#   -l, --list     list available versions
+#       --as=NAME  install rakudo as NAME
+#       --debug    turn on debug output
+#
+# Examples:
+#   rakuenv install -l
+#   rakuenv install latest  # automatically select the latest version
+#   rakuenv install 2020.12-01
+#   rakuenv install 2019.11-01 --as test
+set -uo pipefail
+shopt -s nullglob
+
+# Provide rakuenv completions
+
+RAKUDO_RELEASES_URL=https://raw.githubusercontent.com/skaji/rakudo-releases/master/rakudo-releases.v1.csv
+
+info() {
+  echo "$@" >&2
+}
+
+die() {
+  info "$@"
+  exit 1
+}
+
+http_get() {
+  local url=$1
+  if curl --version &>/dev/null; then
+    curl -fsSL $url
+  elif wget --version &>/dev/null; then
+    wget -q -O - $url
+  else
+    die "Need curl or wget"
+  fi
+}
+
+http_download() {
+  local url=$1
+  local file=$2
+  local tmp_file=$file.$(date +%s)
+  local ret=1
+  if curl --version &>/dev/null; then
+    curl -fsSL -o $tmp_file $url
+    ret=$?
+  elif wget --version &>/dev/null; then
+    wget -q -O $tmp_file $url
+    ret=$?
+  else
+    die "Need curl or wget"
+  fi
+  if [[ $ret -eq 0 ]]; then
+    mv $tmp_file $file
+  else
+    rm -f $tmp_file
+    return 1
+  fi
+}
+
+download_url() {
+  local version=$1
+  local platform=$(platform)
+  http_get $RAKUDO_RELEASES_URL | \
+    \grep ,archive, | \
+    \grep ,moar, | \
+    \grep ",$platform," | \
+    \grep ",$version," | \
+    \cut -d, -f10
+}
+
+available() {
+  local platform=$(platform)
+  http_get $RAKUDO_RELEASES_URL | \
+    \grep ,archive, | \
+    \grep ,moar, | \
+    \grep ",$platform," | \
+    \cut -d, -f12
+}
+
+platform() {
+  local uname=$(uname -s -m)
+  if [[ $uname = "Darwin x86_64" ]]; then
+    echo macos
+  elif [[ $uname = "Linux x86_64" ]]; then
+    echo linux
+  else
+    die "Unsupported platform '$uname'"
+  fi
+}
+
+run() {
+  local version=$1
+  local as=$2
+  local root=${RAKUENV_ROOT-$HOME/.rakuenv}
+
+  if [[ -e $root/versions/$as ]]; then
+    die "Already exists $as"
+  fi
+
+  local cache
+  for f in "$root/cache/rakudo-moar-$version"-*; do
+    cache="$f"
+  done
+  if [[ -z $cache ]]; then
+    local download_url=$(download_url $version)
+    if [[ -z $download_url ]]; then
+      die "Unknown version '$version', try 'rakuenv install --list'"
+    fi
+    mkdir -p $root/cache
+    cache="$root/cache"/${download_url##*/}
+    echo "Downloading $download_url" >&2
+    if ! http_download $download_url $cache; then
+      die "Failed to download tarball"
+    fi
+  fi
+
+  mkdir -p "$root/versions/$as"
+  info "Extracting $cache"
+  tar xf $cache -C "$root/versions/$as" --strip-components 1
+  if [[ -e $root/versions/$as/bin/rakudo ]]; then
+    info "Successfully installed $as"
+    info "You may want to execute 'rakuenv global $as'"
+  else
+    rm -rf "$root/versions/$as"
+    die "Failed to extract $cache"
+  fi
+}
+
+main() {
+  local option_debug=
+  local option_as=
+  local option_list=
+  local option_help=
+  local argv=()
+  local _argv=("$@")
+  local _v
+  while [[ ${#_argv[@]} -gt 0 ]]; do
+    case "${_argv[0]}" in
+    --debug)
+      option_debug=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --as | --as=*)
+      if [[ ${_argv[0]} =~ ^--as= ]]; then
+        _v="${_argv[0]##--as=}"
+        _argv=("${_argv[@]:1}")
+      else
+        if [[ ${#_argv[@]} -eq 1 ]] || [[ ${_argv[1]} =~ ^- ]]; then
+          echo "${_argv[0]} option requires an argument" >&2
+          return 1
+        fi
+        _v="${_argv[1]}"
+        _argv=("${_argv[@]:2}")
+      fi
+      option_as="$_v"
+      ;;
+    --list | -l| --complete)
+      option_list=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --help | -h)
+      option_help=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    -[a-zA-Z0-9][a-zA-Z0-9]*)
+      _v="${_argv[0]:1}"
+      _argv=($(echo "$_v" | \grep -o . | \sed -e 's/^/-/') "${_argv[@]:1}")
+      ;;
+    -*)
+      echo "Unknown option ${_argv[0]}" >&2
+      return 1
+      ;;
+    *)
+      argv+=("${_argv[0]}")
+      _argv=("${_argv[@]:1}")
+      ;;
+    esac
+  done
+
+  if [[ -n $option_debug ]]; then
+    set -x
+  fi
+  if [[ -n $option_list ]]; then
+    available
+    exit 0
+  fi
+  if [[ -n $option_help ]]; then
+    exec rakuenv-help install
+  fi
+  if [[ ${#argv[@]} -eq 0 ]]; then
+    die "Need VERSION argument"
+  fi
+  local version="${argv[0]}"
+  if [[ $version = latest ]]; then
+    version=$(available | \head -1)
+  fi
+  local as=$version
+  if [[ -n $option_as ]]; then
+    as=$option_as
+  fi
+  run $version $as
+  rakuenv-rehash
+}
+
+main "$@"
