@@ -103,7 +103,7 @@ run() {
     die "Already exists $as"
   fi
 
-  local cache
+  local cache=
   for f in "$root/cache/rakudo-moar-$version"-*; do
     cache="$f"
   done
