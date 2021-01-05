@@ -107,7 +107,7 @@ run() {
   for f in "$root/cache/rakudo-moar-$version"-*; do
     cache="$f"
   done
-  if [[ -z $cache ]]; then
+  if [[ -z "${cache:-}" ]]; then
     local download_url=$(download_url $version)
     if [[ -z $download_url ]]; then
       die "Unknown version '$version', try 'rakuenv install --list'"
