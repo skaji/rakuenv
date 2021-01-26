@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-
+#
+# Summary: Uninstall rakudo installation
+#
+# Usage: rakuenv uninstall <version>
+#
 set -e
 [ -n "$RAKUENV_DEBUG" ] && set -x
 
