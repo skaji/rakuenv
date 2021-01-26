@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+#
+# Summary: Reset rakudo installation
+#
+# Usage: rakuenv reset <version>
+#
+# Options:
+#  -h, --help   show help
+#      --debug  turn on debug output
+#
+# Examples:
+#  rakuenv reset 2020.12-01
+set -uo pipefail
+shopt -s nullglob
+
+# Provide rakuenv completions
+
+die() {
+  echo "$@" >&2
+  exit 1
+}
+
+run() {
+  local version="$1"
+  local root=${RAKUENV_ROOT-$HOME/.rakuenv}
+  local target="$root/versions/$version"
+  if [[ ! -e $target ]]; then
+    die "version '$version' not installed"
+  fi
+
+  local cache=
+  for f in "$root/cache/rakudo-moar-$version"-*; do
+    cache="$f"
+  done
+  if [[ -z $cache ]]; then
+    die "Missing cache tarball for $version"
+  fi
+  rm -rf "$target"
+  mkdir -p "$target"
+  tar xf "$cache" -C "$target" --strip-components 1
+  if [[ -e "$target/bin/rakudo" ]]; then
+    echo "Successfully reset $version"
+  else
+    die "Failed to reset $version"
+  fi
+}
+
+main() {
+  local option_help=
+  local option_complete=
+  local option_debug=
+  local argv=()
+  local _argv=("$@")
+  local _v
+  while [[ ${#_argv[@]} -gt 0 ]]; do
+    case "${_argv[0]}" in
+    --help | -h)
+      option_help=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --complete)
+      option_complete=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --debug)
+      option_debug=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    -[a-zA-Z0-9][a-zA-Z0-9]*)
+      _v="${_argv[0]:1}"
+      _argv=($(echo "$_v" | \grep -o . | \sed -e 's/^/-/') "${_argv[@]:1}")
+      ;;
+    -?*)
+      echo "Unknown option ${_argv[0]}" >&2
+      return 1
+      ;;
+    *)
+      argv+=("${_argv[0]}")
+      _argv=("${_argv[@]:1}")
+      ;;
+    esac
+  done
+  if [[ -n $option_help ]]; then
+    exec rakuenv-help reset
+  fi
+  if [[ -n $option_complete ]]; then
+    exec rakuenv-versions --bare
+  fi
+  if [[ -n $option_debug ]]; then
+    set -x
+  fi
+  if [[ ${#argv[@]} -eq 0 ]]; then
+    die "Need VERSION argument"
+  fi
+  local version="${argv[0]}"
+  if [[ $version = "-" ]]; then
+    version=$(rakuenv-version-name)
+    if [[ $version = system ]]; then
+      die "Cannot reset system raku"
+    fi
+  fi
+  run "$version"
+}
+
+main "$@"
