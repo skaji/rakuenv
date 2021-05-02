@@ -66,32 +66,52 @@ http_download() {
 download_url() {
   local version=$1
   local platform=$(platform)
-  http_get $RAKUDO_RELEASES_URL | \
-    \grep ,archive, | \
-    \grep ,moar, | \
-    \grep ",$platform," | \
-    \grep ",$version," | \
+  local architecture=$(architecture)
+  if macos_arm64 $platform $architecture; then
+    architecture=x86_64
+  fi
+  http_get $RAKUDO_RELEASES_URL |
+    \grep ,archive, |
+    \grep ,moar, |
+    \grep ",$platform," |
+    \grep ",$architecture," |
+    \grep ",$version," |
     \cut -d, -f10
 }
 
 available() {
   local platform=$(platform)
-  http_get $RAKUDO_RELEASES_URL | \
-    \grep ,archive, | \
-    \grep ,moar, | \
-    \grep ",$platform," | \
+  local architecture=$(architecture)
+  if macos_arm64 $platform $architecture; then
+    architecture=x86_64
+  fi
+  http_get $RAKUDO_RELEASES_URL |
+    \grep ,archive, |
+    \grep ,moar, |
+    \grep ",$platform," |
+    \grep ",$architecture," |
     \cut -d, -f12
 }
 
 platform() {
-  local uname=$(uname -s -m)
-  if [[ $uname = "Darwin x86_64" ]]; then
+  local uname=$(uname -s)
+  if [[ $uname = Darwin ]]; then
     echo macos
-  elif [[ $uname = "Linux x86_64" ]]; then
+  elif [[ $uname = Linux ]]; then
     echo linux
   else
     die "Unsupported platform '$uname'"
   fi
+}
+
+architecture() {
+  uname -m
+}
+
+macos_arm64() {
+  local platform=${1:-$(platform)}
+  local architecture=${2:-$(architecture)}
+  [[ $platform = macos ]] && [[ $architecture = arm64 ]]
 }
 
 run() {
@@ -160,7 +180,7 @@ main() {
       fi
       option_as="$_v"
       ;;
-    --list | -l| --complete)
+    --list | -l | --complete)
       option_list=1
       _argv=("${_argv[@]:1}")
       ;;
@@ -201,6 +221,9 @@ main() {
     version=$(available | \head -1)
   fi
   local as=$version
+  if macos_arm64; then
+    as=$as-macos-x86_64
+  fi
   if [[ -n $option_as ]]; then
     as=$option_as
   fi
