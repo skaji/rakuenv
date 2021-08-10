@@ -19,7 +19,7 @@ shopt -s nullglob
 
 # Provide rakuenv completions
 
-RAKUDO_RELEASES_URL=https://raw.githubusercontent.com/skaji/rakudo-releases/master/rakudo-releases.v1.csv
+RAKUDO_RELEASES_URL=https://raw.githubusercontent.com/skaji/rakudo-releases/main/rakudo-releases.v1.csv
 
 info() {
   echo "$@" >&2
