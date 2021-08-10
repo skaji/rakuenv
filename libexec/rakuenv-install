@@ -66,31 +66,46 @@ http_download() {
 download_url() {
   local version=$1
   local platform=$(platform)
+  local archname=$(archname)
   http_get $RAKUDO_RELEASES_URL | \
     \grep ,archive, | \
     \grep ,moar, | \
     \grep ",$platform," | \
+    \grep ",$archname," | \
     \grep ",$version," | \
     \cut -d, -f10
 }
 
 available() {
   local platform=$(platform)
+  local archname=$(archname)
   http_get $RAKUDO_RELEASES_URL | \
     \grep ,archive, | \
     \grep ,moar, | \
     \grep ",$platform," | \
+    \grep ",$archname," | \
     \cut -d, -f12
 }
 
 platform() {
-  local uname=$(uname -s -m)
-  if [[ $uname = "Darwin x86_64" ]]; then
+  local uname=$(uname -s)
+  if [[ $uname = "Darwin" ]]; then
     echo macos
-  elif [[ $uname = "Linux x86_64" ]]; then
+  elif [[ $uname = "Linux" ]]; then
     echo linux
   else
     die "Unsupported platform '$uname'"
+  fi
+}
+
+archname() {
+  local uname=$(uname -m)
+  if [[ $uname = "x86_64" ]]; then
+    echo x86_64
+  elif [[ $uname = "arm64" ]]; then
+    echo arm64
+  else
+    die "Unsupported archname '$uname'"
   fi
 }
 
