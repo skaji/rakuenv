@@ -73,7 +73,7 @@ download_url() {
     \grep ",$platform," | \
     \grep ",$archname," | \
     \grep ",$version," | \
-    \cut -d, -f10
+    \cut -d, -f9
 }
 
 available() {
@@ -84,7 +84,7 @@ available() {
     \grep ,moar, | \
     \grep ",$platform," | \
     \grep ",$archname," | \
-    \cut -d, -f12
+    \cut -d, -f11
 }
 
 platform() {
