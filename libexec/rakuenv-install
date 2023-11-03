@@ -142,7 +142,6 @@ run() {
   tar xf $cache -C "$root/versions/$as" --strip-components 1
   if [[ -e $root/versions/$as/bin/rakudo ]]; then
     info "Successfully installed $as"
-    info "You may want to execute 'rakuenv global $as'"
   else
     rm -rf "$root/versions/$as"
     die "Failed to extract $cache"
@@ -234,6 +233,8 @@ main() {
   run $version $as
   if [[ -n $option_global ]]; then
     rakuenv-global $as
+  else
+    info "You may want to execute 'rakuenv global $as'"
   fi
   if [[ -n $option_rehash ]]; then
     rakuenv-rehash
