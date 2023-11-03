@@ -8,6 +8,8 @@
 #   -l, --list     list available versions
 #       --as=NAME  install rakudo as NAME
 #       --debug    turn on debug output
+#   -g, --global   execute rakuenv global after installation
+#   -r, --rehash   execute rakuenv rehash after installation
 #
 # Examples:
 #   rakuenv install -l
@@ -152,6 +154,8 @@ main() {
   local option_as=
   local option_list=
   local option_help=
+  local option_rehash=
+  local option_global=
   local argv=()
   local _argv=("$@")
   local _v
@@ -181,6 +185,14 @@ main() {
       ;;
     --help | -h)
       option_help=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --rehash | -r)
+      option_rehash=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --global | -g)
+      option_global=1
       _argv=("${_argv[@]:1}")
       ;;
     -[a-zA-Z0-9][a-zA-Z0-9]*)
@@ -220,7 +232,12 @@ main() {
     as=$option_as
   fi
   run $version $as
-  rakuenv-rehash
+  if [[ -n $option_global ]]; then
+    rakuenv-global $as
+  fi
+  if [[ -n $option_rehash ]]; then
+    rakuenv-rehash
+  fi
 }
 
 main "$@"
